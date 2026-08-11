@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Camera Field of View Explorer</title>
+<style>
+:root{
+  --bg:#f7f8fb;
+  --panel:#ffffff;
+  --text:#172033;
+  --muted:#667085;
+  --border:#dde2ea;
+  --left:#7c3aed;
+  --center:#0f766e;
+  --right:#d97706;
+  --overlap1:#b45309;
+  --overlap2:#5b21b6;
+  --triple:#111827;
+  --accent:#2563eb;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.wrap{max-width:1320px;margin:0 auto;padding:22px 16px 44px}
+h1{margin:0 0 14px;font-size:clamp(1.55rem,3vw,2.25rem);letter-spacing:-.025em}
+.question{
+  padding:13px 15px;border:1px solid #e6e9ef;border-radius:13px;background:#fff;
+  line-height:1.5;margin:0 0 16px
+}
+.mainGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,.85fr);gap:18px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:18px}
+.leftPanel{padding:16px}.side{padding:18px}
+.viewCard{
+  border:1px solid #e8edf4;
+  border-radius:16px;
+  background:#fff;
+  overflow:hidden;
+  margin-bottom:14px;
+}
+.viewHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  background:#fbfcfe;
+  border-bottom:1px solid #edf1f6;
+}
+.viewHead b{font-size:.97rem}
+.viewHead span{color:var(--muted);font-size:.88rem}
+.realisticLayout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 255px;
+  gap:0;
+}
+.realisticControls{
+  border-left:1px solid #edf1f6;
+  padding:12px;
+  background:#fbfcfe;
+}
+.controlTitle{font-weight:800;font-size:.92rem;margin-bottom:10px;color:#344054}
+svg{display:block;width:100%;height:auto;background:#fff}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 12px;color:var(--muted);font-size:.9rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:12px;height:12px;border-radius:3px}
+.controls{display:grid;gap:12px;margin-top:10px}
+.groupTitle{margin-top:14px;font-size:.96rem;font-weight:800;color:#344054}
+.control{display:grid;grid-template-columns:115px 1fr 60px;gap:10px;align-items:center}
+.realisticControls .control{
+  grid-template-columns:1fr;
+  gap:5px;
+  margin-bottom:13px;
+}
+.realisticControls .controlTop{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.control label{font-size:.92rem;font-weight:700}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.value{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
+.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+button{border:0;border-radius:10px;padding:9px 12px;font-weight:750;cursor:pointer;background:#edf2ff;color:#274690}
+button.primary{background:var(--accent);color:#fff}
+.result{border:1px solid #d9e3f2;border-radius:15px;padding:15px;background:#f7faff;margin-bottom:15px}
+.kicker{color:var(--muted);font-size:.88rem}
+.big{font-size:2.25rem;font-weight:900;letter-spacing:-.04em;margin:3px 0}
+.breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat{border:1px solid #e5e8ee;border-radius:11px;padding:9px;text-align:center}
+.stat small{display:block;color:var(--muted);font-size:.78rem}
+.stat b{font-size:1rem}
+h2{font-size:1.05rem;margin:18px 0 9px}
+.interval{padding:9px 0;border-top:1px solid #edf0f3;line-height:1.45}
+.interval:first-child{border-top:0}
+.badge{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}
+.formula{
+  background:#111827;color:#fff;border-radius:12px;padding:12px 13px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92rem;line-height:1.5;
+  white-space:pre-wrap
+}
+.note,.explain{color:var(--muted);font-size:.9rem;line-height:1.56}
+.callout{margin-top:12px;padding:12px;border-left:4px solid var(--accent);background:#f5f8ff;border-radius:8px;line-height:1.56}
+.smallCard{border:1px solid #e7ebf2;border-radius:12px;padding:11px 12px;background:#fcfcfd;margin-top:10px}
+.toggleRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  align-items:center;
+  padding:8px 12px 10px;
+  background:#fff;
+}
+.toggleRow label{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:.9rem;
+  font-weight:700;
+  color:#344054;
+  cursor:pointer;
+}
+.toggleRow input[type=checkbox]{
+  width:16px;height:16px;accent-color:var(--accent);
+}
+.positionNote{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid #e8edf4;
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.45;
+}
+.angleControls{
+  border:1px solid #e7ebf2;
+  border-radius:14px;
+  padding:12px;
+  background:#fcfcfd;
+}
+
+.conceptBox{
+  border-radius:12px;
+  padding:10px 11px;
+  margin-top:10px;
+  border:1px solid #e5eaf1;
+  background:#fff;
+}
+.conceptTitle{
+  font-size:.88rem;
+  font-weight:800;
+  color:#344054;
+  margin-bottom:4px;
+}
+.conceptText{
+  font-size:.84rem;
+  line-height:1.48;
+  color:#667085;
+}
+.physicalBox{
+  border-left:4px solid #b45309;
+}
+.geometryExplanation{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:0 12px 12px;
+}
+.angularBox{
+  border-left:4px solid #2563eb;
+}
+.answerBox{
+  border-left:4px solid #0f766e;
+}
+.comparisonStrip{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:12px;
+  margin-top:14px;
+  padding:12px 14px;
+  border:1px solid #e5eaf1;
+  border-radius:14px;
+  background:#fcfcfd;
+}
+.comparisonStrip div:not(.compareArrow){
+  display:grid;
+  gap:3px;
+}
+.comparisonStrip b{
+  font-size:.9rem;
+  color:#344054;
+}
+.comparisonStrip span{
+  font-size:.84rem;
+  line-height:1.42;
+  color:#667085;
+}
+.compareArrow{
+  font-size:1.4rem;
+  color:#98a2b3;
+  font-weight:700;
+}
+.liveMeaning{
+  margin-top:12px;
+  border:1px solid #e5eaf1;
+  border-radius:12px;
+  padding:10px 11px;
+  background:#fafcff;
+  font-size:.84rem;
+  line-height:1.48;
+  color:#667085;
+}
+.liveMeaning b{color:#344054}
+
+@media(max-width:1050px){
+  .mainGrid{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .realisticLayout{grid-template-columns:1fr}
+  .realisticControls{border-left:0;border-top:1px solid #edf1f6}
+  .geometryExplanation{grid-template-columns:1fr}
+  .comparisonStrip{grid-template-columns:1fr}
+  .compareArrow{transform:rotate(90deg);text-align:center}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Camera Field of View Explorer</h1>
+
+  <p class="question">
+    <b>#14.</b> A typical television newscast has three cameras. The center camera directly faces the news anchor's desk.
+    The other two cameras are both angled <b>45° away</b> from the center camera. Each camera has a field of view of <b>60°</b>.
+    What is the total angle covered by the three cameras?
+  </p>
+
+  <div class="mainGrid">
+    <section class="panel leftPanel">
+
+      <div class="viewCard">
+        <div class="viewHead">
+          <b>1. Realistic camera view</b>
+          <span>Physical FOV: each 60° cone begins at its own camera.</span>
+        </div>
+
+        <div class="realisticLayout">
+          <svg id="realScene" viewBox="0 0 860 500" role="img"
+            aria-label="Realistic camera field-of-view visualization"></svg>
+
+          <div class="realisticControls">
+            <div class="controlTitle">Move cameras along their centerlines</div>
+
+            <div class="control">
+              <div class="controlTop">
+                <label for="leftDist">Left camera</label>
+                <div class="value" id="leftDistVal">220</div>
+              </div>
+              <input id="leftDist" type="range" min="120" max="320" step="1" value="220">
+            </div>
+
+            <div class="control">
+              <div class="controlTop">
+                <label for="centerDist">Center camera</label>
+                <div class="value" id="centerDistVal">180</div>
+              </div>
+              <input id="centerDist" type="range" min="120" max="320" step="1" value="180">
+            </div>
+
+            <div class="control">
+              <div class="controlTop">
+                <label for="rightDist">Right camera</label>
+                <div class="value" id="rightDistVal">220</div>
+              </div>
+              <input id="rightDist" type="range" min="120" max="320" step="1" value="220">
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:700;margin-top:6px">
+              <input type="checkbox" id="showRealFill" checked style="width:16px;height:16px;accent-color:var(--accent)">
+              Show FOV fill
+            </label>
+
+            <div class="positionNote">
+              <b>Try this:</b> keep the angles at −45°, 0°, and +45°, then move the cameras.
+              The cones in this top picture move because the cameras physically move.
+            </div>
+
+            <div class="conceptBox physicalBox">
+              <div class="conceptTitle">What changes here?</div>
+              <div class="conceptText">
+                <b>Physical overlap can change.</b> Two 60° cones can overlap differently in the room when their camera positions change.
+                The textbook does not give enough camera-position information to calculate that physical overlap uniquely.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="angleControls">
+        <div class="groupTitle" style="margin-top:0">Camera angles and FOV</div>
+        <div class="controls">
+          <div class="control">
+            <label for="leftAngle">Left aim</label>
+            <input id="leftAngle" type="range" min="-100" max="20" step="1" value="-45">
+            <div class="value" id="leftVal">−45°</div>
+          </div>
+          <div class="control">
+            <label for="centerAngle">Center aim</label>
+            <input id="centerAngle" type="range" min="-60" max="60" step="1" value="0">
+            <div class="value" id="centerVal">0°</div>
+          </div>
+          <div class="control">
+            <label for="rightAngle">Right aim</label>
+            <input id="rightAngle" type="range" min="-20" max="100" step="1" value="45">
+            <div class="value" id="rightVal">45°</div>
+          </div>
+          <div class="control">
+            <label for="fov">Each FOV</label>
+            <input id="fov" type="range" min="20" max="100" step="1" value="60">
+            <div class="value" id="fovVal">60°</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewCard" style="margin-top:14px">
+        <div class="viewHead">
+          <b>2. Geometry view for #14</b>
+          <span>Angular coverage: same directions, translated to common vertex O.</span>
+        </div>
+        <svg id="geoScene" viewBox="0 0 860 570" role="img"
+          aria-label="Geometry abstraction used for the angle calculation"></svg>
+
+        <div class="geometryExplanation">
+          <div class="conceptBox angularBox">
+            <div class="conceptTitle">Why introduce point O?</div>
+            <div class="conceptText">
+              Point O is <b>not another camera</b>. It is a mathematical reference point.
+              We copy only each camera's <b>direction</b> and <b>60° FOV width</b> to O.
+              Once all three angle intervals share one vertex, their angular overlap can be measured directly.
+            </div>
+          </div>
+          <div class="conceptBox answerBox">
+            <div class="conceptTitle">What #14 is actually measuring</div>
+            <div class="conceptText">
+              The given information is sufficient to determine <b>total angular coverage</b>, not the exact physical area seen by the cameras.
+              Camera distance is therefore ignored in this lower model.
+            </div>
+          </div>
+        </div>
+
+        <div class="toggleRow">
+          <label><input type="checkbox" id="showGeoOverlapFill" checked> Show overlap fill</label>
+          <label><input type="checkbox" id="showGeoOverlapLabels" checked> Show overlap labels</label>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--left)"></i>Left camera field</span>
+        <span><i class="swatch" style="background:var(--center)"></i>Center camera field</span>
+        <span><i class="swatch" style="background:var(--right)"></i>Right camera field</span>
+        <span><i class="swatch" style="background:var(--overlap1)"></i>Left ∩ Center overlap</span>
+        <span><i class="swatch" style="background:var(--overlap2)"></i>Center ∩ Right overlap</span>
+      </div>
+
+      <div class="comparisonStrip">
+        <div>
+          <b>Realistic view</b>
+          <span>Shows where the cameras are. Moving a camera changes the spatial arrangement of its FOV.</span>
+        </div>
+        <div class="compareArrow">→</div>
+        <div>
+          <b>Geometry view</b>
+          <span>Keeps only direction + FOV. This is enough to solve the angular question.</span>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="primary" id="reset">Reset original problem</button>
+        <button id="moveOnly">Move cameras only</button>
+        <button id="overlapBtn">More overlap</button>
+        <button id="gapBtn">Create gaps</button>
+      </div>
+    </section>
+
+    <aside class="panel side">
+      <div class="result">
+        <div class="kicker">Total unique angle covered</div>
+        <div class="big" id="total">150°</div>
+        <div class="kicker" id="resultNote"></div>
+      </div>
+
+      <div class="breakdown">
+        <div class="stat"><small>Left ↔ Center</small><b id="sepLC">45°</b></div>
+        <div class="stat"><small>Center ↔ Right</small><b id="sepCR">45°</b></div>
+        <div class="stat"><small>Half-FOV</small><b id="half">30°</b></div>
+      </div>
+
+      <div class="liveMeaning" id="liveMeaning"></div>
+
+      <h2>Each angular field</h2>
+      <div id="intervals"></div>
+
+      <h2>Overlap calculation</h2>
+      <div class="formula" id="overlapFormula"></div>
+
+      <h2>Total-angle calculation</h2>
+      <div class="formula" id="unionFormula"></div>
+
+      <h2>Why moving a camera changes the top picture but not #14's answer</h2>
+      <div class="smallCard">
+        <div class="explain" id="positionExplanation"></div>
+      </div>
+
+      <div class="callout" id="callout"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+
+  const cams = [
+    {name:"Left", short:"L", color:"#7c3aed", angleInput:document.getElementById("leftAngle"), distInput:document.getElementById("leftDist")},
+    {name:"Center", short:"C", color:"#0f766e", angleInput:document.getElementById("centerAngle"), distInput:document.getElementById("centerDist")},
+    {name:"Right", short:"R", color:"#d97706", angleInput:document.getElementById("rightAngle"), distInput:document.getElementById("rightDist")}
+  ];
+
+  const fovEl = document.getElementById("fov");
+  const showRealFillEl = document.getElementById("showRealFill");
+  const showGeoOverlapFillEl = document.getElementById("showGeoOverlapFill");
+  const showGeoOverlapLabelsEl = document.getElementById("showGeoOverlapLabels");
+  const realSvg = document.getElementById("realScene");
+  const geoSvg = document.getElementById("geoScene");
+
+  const realRoot = {cx:430, cy:418, maxR:360};
+  const geoRoot = {cx:430, cy:470, maxR:380};
+
+  function fmt(v, plus=false){
+    const n = Math.round(v*10)/10;
+    if(n < 0) return "−" + Math.abs(n) + "°";
+    if(plus && n > 0) return "+" + n + "°";
+    return n + "°";
+  }
+
+  function intervalOf(angle,fov){ return [angle-fov/2, angle+fov/2]; }
+
+  function intersect(a,b){
+    const s=Math.max(a[0],b[0]);
+    const e=Math.min(a[1],b[1]);
+    return e>s ? [s,e] : null;
+  }
+
+  function len(seg){ return seg ? seg[1]-seg[0] : 0; }
+
+  function merge(ints){
+    const s=ints.map(x=>[...x]).sort((a,b)=>a[0]-b[0]);
+    const out=[];
+    for(const seg of s){
+      if(!out.length || seg[0] > out[out.length-1][1]) out.push(seg);
+      else out[out.length-1][1]=Math.max(out[out.length-1][1],seg[1]);
+    }
+    return out;
+  }
+
+  function polar(root,angle,r){
+    const a=(angle-90)*Math.PI/180;
+    return [root.cx+r*Math.cos(a),root.cy+r*Math.sin(a)];
+  }
+
+  function cameraWedgePath(x,y,angle,fov,r){
+    const a1=(angle-fov/2-90)*Math.PI/180;
+    const a2=(angle+fov/2-90)*Math.PI/180;
+    const p1=[x+r*Math.cos(a1),y+r*Math.sin(a1)];
+    const p2=[x+r*Math.cos(a2),y+r*Math.sin(a2)];
+    return `M ${x} ${y} L ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 1 ${p2[0]} ${p2[1]} Z`;
+  }
+
+  function geoWedgePath(root,start,end,r){
+    const p1=polar(root,start,r),p2=polar(root,end,r);
+    return `M ${root.cx} ${root.cy} L ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 1 ${p2[0]} ${p2[1]} Z`;
+  }
+
+  function geoArcPath(root,start,end,r){
+    const p1=polar(root,start,r),p2=polar(root,end,r);
+    return `M ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 1 ${p2[0]} ${p2[1]}`;
+  }
+
+  function clearSvg(svg){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+
+  function drawText(svg,x,y,text,opts={}){
+    const t=document.createElementNS(NS,"text");
+    t.setAttribute("x",x);t.setAttribute("y",y);
+    t.setAttribute("fill",opts.fill||"#344054");
+    t.setAttribute("font-size",opts.size||"12");
+    if(opts.anchor)t.setAttribute("text-anchor",opts.anchor);
+    if(opts.weight)t.setAttribute("font-weight",opts.weight);
+    t.textContent=text;
+    svg.appendChild(t);
+    return t;
+  }
+
+  function drawRealScene(angles,dists,fov,showFill){
+    clearSvg(realSvg);
+
+    for(let a=-90;a<=90;a+=15){
+      const p1=polar(realRoot,a,35),p2=polar(realRoot,a,realRoot.maxR+5);
+      const line=document.createElementNS(NS,"line");
+      line.setAttribute("x1",p1[0]);line.setAttribute("y1",p1[1]);
+      line.setAttribute("x2",p2[0]);line.setAttribute("y2",p2[1]);
+      line.setAttribute("stroke",a===0?"#d6dde8":"#f1f4f8");
+      line.setAttribute("stroke-width",a===0?"1.5":"1");
+      if(a===0)line.setAttribute("stroke-dasharray","5 5");
+      realSvg.appendChild(line);
+    }
+
+    [120,190,260,330].forEach(r=>{
+      const path=document.createElementNS(NS,"path");
+      path.setAttribute("d",geoArcPath(realRoot,-90,90,r));
+      path.setAttribute("fill","none");
+      path.setAttribute("stroke","#f3f5f8");
+      path.setAttribute("stroke-width","1");
+      realSvg.appendChild(path);
+    });
+
+    const desk=document.createElementNS(NS,"rect");
+    desk.setAttribute("x","365");desk.setAttribute("y","42");desk.setAttribute("width","130");desk.setAttribute("height","34");
+    desk.setAttribute("rx","9");desk.setAttribute("fill","#f3f4f6");desk.setAttribute("stroke","#98a2b3");desk.setAttribute("stroke-width","2");
+    realSvg.appendChild(desk);
+    drawText(realSvg,430,63,"ANCHOR DESK",{anchor:"middle",size:"13",weight:"700"});
+
+    const O=document.createElementNS(NS,"circle");
+    O.setAttribute("cx",realRoot.cx);O.setAttribute("cy",realRoot.cy);O.setAttribute("r","4");O.setAttribute("fill","#111827");
+    realSvg.appendChild(O);
+    drawText(realSvg,realRoot.cx+12,realRoot.cy+14,"O",{size:"13",weight:"700"});
+
+    cams.forEach((c,i)=>{
+      const a=angles[i],d=dists[i];
+      const [x,y]=polar(realRoot,a,d);
+      const wedgeLen=265;
+
+      if(showFill){
+        const wedge=document.createElementNS(NS,"path");
+        wedge.setAttribute("d",cameraWedgePath(x,y,a,fov,wedgeLen));
+        wedge.setAttribute("fill",c.color);
+        wedge.setAttribute("fill-opacity",".14");
+        wedge.setAttribute("stroke",c.color);
+        wedge.setAttribute("stroke-opacity",".42");
+        wedge.setAttribute("stroke-width","1.4");
+        realSvg.appendChild(wedge);
+      }
+
+      const b1=polar({cx:x,cy:y},a-fov/2,wedgeLen);
+      const b2=polar({cx:x,cy:y},a+fov/2,wedgeLen);
+
+      [b1,b2].forEach(b=>{
+        const line=document.createElementNS(NS,"line");
+        line.setAttribute("x1",x);line.setAttribute("y1",y);
+        line.setAttribute("x2",b[0]);line.setAttribute("y2",b[1]);
+        line.setAttribute("stroke",c.color);line.setAttribute("stroke-width","1.2");
+        line.setAttribute("stroke-dasharray","6 5");
+        realSvg.appendChild(line);
+      });
+
+      const aim=polar({cx:x,cy:y},a,wedgeLen);
+      const centerline=document.createElementNS(NS,"line");
+      centerline.setAttribute("x1",x);centerline.setAttribute("y1",y);
+      centerline.setAttribute("x2",aim[0]);centerline.setAttribute("y2",aim[1]);
+      centerline.setAttribute("stroke",c.color);centerline.setAttribute("stroke-width","3");
+      realSvg.appendChild(centerline);
+
+      const guide=document.createElementNS(NS,"line");
+      guide.setAttribute("x1",realRoot.cx);guide.setAttribute("y1",realRoot.cy);
+      guide.setAttribute("x2",x);guide.setAttribute("y2",y);
+      guide.setAttribute("stroke","#cbd5e1");guide.setAttribute("stroke-width","1.2");
+      guide.setAttribute("stroke-dasharray","4 4");
+      realSvg.appendChild(guide);
+
+      const body=document.createElementNS(NS,"rect");
+      body.setAttribute("x",x-15);body.setAttribute("y",y-10);
+      body.setAttribute("width","30");body.setAttribute("height","20");body.setAttribute("rx","4");
+      body.setAttribute("fill","#fff");body.setAttribute("stroke",c.color);body.setAttribute("stroke-width","3");
+      realSvg.appendChild(body);
+
+      const lens=document.createElementNS(NS,"circle");
+      lens.setAttribute("cx",x);lens.setAttribute("cy",y);lens.setAttribute("r","4.5");lens.setAttribute("fill",c.color);
+      realSvg.appendChild(lens);
+
+      const bump=document.createElementNS(NS,"rect");
+      bump.setAttribute("x",x-4);bump.setAttribute("y",y-15);bump.setAttribute("width","8");bump.setAttribute("height","5");
+      bump.setAttribute("rx","2");bump.setAttribute("fill",c.color);
+      realSvg.appendChild(bump);
+
+      drawText(realSvg,x,y+31,`${c.name} camera`,{anchor:"middle",size:"12",weight:"800",fill:c.color});
+
+      const labelPt=polar({cx:x,cy:y},a,72);
+      drawText(realSvg,labelPt[0],labelPt[1]+4,`${fmt(fov)} FOV`,{anchor:"middle",size:"11",weight:"800",fill:c.color});
+    });
+  }
+
+  function drawGeoScene(angles,ints,lc,cr,triple,fov,showOverlapFill,showOverlapLabels){
+    clearSvg(geoSvg);
+
+    for(let a=-90;a<=90;a+=15){
+      const p1=polar(geoRoot,a,35),p2=polar(geoRoot,a,geoRoot.maxR+5);
+      const line=document.createElementNS(NS,"line");
+      line.setAttribute("x1",p1[0]);line.setAttribute("y1",p1[1]);
+      line.setAttribute("x2",p2[0]);line.setAttribute("y2",p2[1]);
+      line.setAttribute("stroke",a===0?"#aeb7c5":"#edf0f4");
+      line.setAttribute("stroke-width",a===0?"1.7":"1");
+      if(a===0)line.setAttribute("stroke-dasharray","5 5");
+      geoSvg.appendChild(line);
+
+      const q=polar(geoRoot,a,geoRoot.maxR+18);
+      drawText(geoSvg,q[0],q[1]+4,fmt(a,true),{
+        anchor:"middle",size:(a%30===0?"11":"10"),fill:(a%30===0?"#7b8493":"#a7aeba")
+      });
+    }
+
+    [120,185,250,315,380].forEach(r=>{
+      const path=document.createElementNS(NS,"path");
+      path.setAttribute("d",geoArcPath(geoRoot,-90,90,r));
+      path.setAttribute("fill","none");
+      path.setAttribute("stroke","#f0f2f6");
+      path.setAttribute("stroke-width","1");
+      geoSvg.appendChild(path);
+    });
+
+    const desk=document.createElementNS(NS,"rect");
+    desk.setAttribute("x","365");desk.setAttribute("y","44");desk.setAttribute("width","130");desk.setAttribute("height","34");
+    desk.setAttribute("rx","9");desk.setAttribute("fill","#f3f4f6");desk.setAttribute("stroke","#98a2b3");desk.setAttribute("stroke-width","2");
+    geoSvg.appendChild(desk);
+    drawText(geoSvg,430,65,"ANCHOR DESK",{anchor:"middle",size:"13",weight:"700"});
+
+    const O=document.createElementNS(NS,"circle");
+    O.setAttribute("cx",geoRoot.cx);O.setAttribute("cy",geoRoot.cy);O.setAttribute("r","5");O.setAttribute("fill","#111827");
+    geoSvg.appendChild(O);
+    drawText(geoSvg,geoRoot.cx+12,geoRoot.cy+16,"O",{size:"13",weight:"700"});
+
+    cams.forEach((c,i)=>{
+      const [s,e]=ints[i];
+      const wedge=document.createElementNS(NS,"path");
+      wedge.setAttribute("d",geoWedgePath(geoRoot,s,e,geoRoot.maxR));
+      wedge.setAttribute("fill",c.color);wedge.setAttribute("fill-opacity",".15");
+      wedge.setAttribute("stroke",c.color);wedge.setAttribute("stroke-opacity",".45");wedge.setAttribute("stroke-width","1.4");
+      geoSvg.appendChild(wedge);
+    });
+
+    if(showOverlapFill){
+      [
+        {seg:lc,fill:"var(--overlap1)",op:".35"},
+        {seg:cr,fill:"var(--overlap2)",op:".32"},
+        {seg:triple,fill:"var(--triple)",op:".35"}
+      ].forEach(obj=>{
+        if(!obj.seg)return;
+        const w=document.createElementNS(NS,"path");
+        w.setAttribute("d",geoWedgePath(geoRoot,obj.seg[0],obj.seg[1],geoRoot.maxR));
+        w.setAttribute("fill",obj.fill);w.setAttribute("fill-opacity",obj.op);
+        w.setAttribute("stroke",obj.fill);w.setAttribute("stroke-width","1.1");
+        geoSvg.appendChild(w);
+      });
+    }
+
+    cams.forEach((c,i)=>{
+      const a=angles[i],[s,e]=ints[i];
+
+      [s,e].forEach(bound=>{
+        const p=polar(geoRoot,bound,geoRoot.maxR);
+        const line=document.createElementNS(NS,"line");
+        line.setAttribute("x1",geoRoot.cx);line.setAttribute("y1",geoRoot.cy);
+        line.setAttribute("x2",p[0]);line.setAttribute("y2",p[1]);
+        line.setAttribute("stroke",c.color);line.setAttribute("stroke-width","1.35");
+        line.setAttribute("stroke-dasharray","6 5");
+        geoSvg.appendChild(line);
+      });
+
+      const aim=polar(geoRoot,a,geoRoot.maxR);
+      const ray=document.createElementNS(NS,"line");
+      ray.setAttribute("x1",geoRoot.cx);ray.setAttribute("y1",geoRoot.cy);
+      ray.setAttribute("x2",aim[0]);ray.setAttribute("y2",aim[1]);
+      ray.setAttribute("stroke",c.color);ray.setAttribute("stroke-width","3");
+      geoSvg.appendChild(ray);
+
+      const tag=polar(geoRoot,a,270);
+      drawText(geoSvg,tag[0],tag[1]+4,`${c.short}: ${fmt(a,true)}`,{anchor:"middle",size:"12",weight:"800",fill:c.color});
+
+      const fovTag=polar(geoRoot,a,110);
+      drawText(geoSvg,fovTag[0],fovTag[1]+4,`${fmt(fov)} FOV`,{anchor:"middle",size:"11",weight:"800",fill:c.color});
+    });
+
+    [
+      {s:angles[0],e:angles[1],r:145,label:fmt(Math.abs(angles[1]-angles[0]))},
+      {s:angles[1],e:angles[2],r:180,label:fmt(Math.abs(angles[2]-angles[1]))}
+    ].forEach(obj=>{
+      if(obj.e<=obj.s)return;
+      const path=document.createElementNS(NS,"path");
+      path.setAttribute("d",geoArcPath(geoRoot,obj.s,obj.e,obj.r));
+      path.setAttribute("fill","none");path.setAttribute("stroke","#475467");path.setAttribute("stroke-width","2");
+      geoSvg.appendChild(path);
+      const q=polar(geoRoot,(obj.s+obj.e)/2,obj.r+14);
+      drawText(geoSvg,q[0],q[1]+4,obj.label,{anchor:"middle",size:"12",weight:"800",fill:"#475467"});
+    });
+
+    if(showOverlapLabels){
+      [
+        {seg:lc,r:345,text:lc?`overlap ${fmt(len(lc))}`:"",fill:"var(--overlap1)"},
+        {seg:cr,r:315,text:cr?`overlap ${fmt(len(cr))}`:"",fill:"var(--overlap2)"},
+        {seg:triple,r:285,text:triple?`triple ${fmt(len(triple))}`:"",fill:"#111827"}
+      ].forEach(obj=>{
+        if(!obj.seg)return;
+        const q=polar(geoRoot,(obj.seg[0]+obj.seg[1])/2,obj.r);
+        drawText(geoSvg,q[0],q[1]+4,obj.text,{anchor:"middle",size:"12",weight:"900",fill:obj.fill});
+      });
+    }
+  }
+
+  function update(){
+    const angles=cams.map(c=>+c.angleInput.value);
+    const dists=cams.map(c=>+c.distInput.value);
+    const fov=+fovEl.value;
+    const half=fov/2;
+    const ints=angles.map(a=>intervalOf(a,fov));
+    const merged=merge(ints);
+    const total=merged.reduce((s,m)=>s+(m[1]-m[0]),0);
+    const raw=3*fov;
+    const duplicate=raw-total;
+    const lc=intersect(ints[0],ints[1]);
+    const cr=intersect(ints[1],ints[2]);
+    const triple=lc&&cr?intersect(lc,cr):null;
+
+    document.getElementById("leftVal").textContent=fmt(angles[0]);
+    document.getElementById("centerVal").textContent=fmt(angles[1]);
+    document.getElementById("rightVal").textContent=fmt(angles[2]);
+    document.getElementById("fovVal").textContent=fmt(fov);
+    document.getElementById("leftDistVal").textContent=dists[0];
+    document.getElementById("centerDistVal").textContent=dists[1];
+    document.getElementById("rightDistVal").textContent=dists[2];
+    document.getElementById("sepLC").textContent=fmt(Math.abs(angles[1]-angles[0]));
+    document.getElementById("sepCR").textContent=fmt(Math.abs(angles[2]-angles[1]));
+    document.getElementById("half").textContent=fmt(half);
+    document.getElementById("total").textContent=fmt(total);
+    document.getElementById("resultNote").textContent=
+      duplicate>0
+      ? `${fmt(raw)} if all three FOVs are added directly; ${fmt(duplicate)} is overlap counted more than once.`
+      : `No overlap is being counted twice.`;
+
+    drawRealScene(angles,dists,fov,showRealFillEl.checked);
+    drawGeoScene(angles,ints,lc,cr,triple,fov,showGeoOverlapFillEl.checked,showGeoOverlapLabelsEl.checked);
+
+    const intervalBox=document.getElementById("intervals");
+    intervalBox.innerHTML="";
+    cams.forEach((c,i)=>{
+      const d=document.createElement("div");
+      d.className="interval";
+      d.innerHTML=`<span class="badge" style="background:${c.color}"></span><b>${c.name}</b>: centerline ${fmt(angles[i],true)}; field = <b>${fmt(ints[i][0],true)} to ${fmt(ints[i][1],true)}</b>`;
+      intervalBox.appendChild(d);
+    });
+
+    document.getElementById("overlapFormula").textContent=
+`Left ∩ Center:
+[${fmt(ints[0][0],true)}, ${fmt(ints[0][1],true)}] ∩ [${fmt(ints[1][0],true)}, ${fmt(ints[1][1],true)}]
+= ${lc ? `[${fmt(lc[0],true)}, ${fmt(lc[1],true)}]` : "∅"}
+overlap = ${fmt(len(lc))}
+
+Center ∩ Right:
+[${fmt(ints[1][0],true)}, ${fmt(ints[1][1],true)}] ∩ [${fmt(ints[2][0],true)}, ${fmt(ints[2][1],true)}]
+= ${cr ? `[${fmt(cr[0],true)}, ${fmt(cr[1],true)}]` : "∅"}
+overlap = ${fmt(len(cr))}`;
+
+    const unionText=merged.map(m=>`[${fmt(m[0],true)}, ${fmt(m[1],true)}]`).join(" ∪ ");
+    document.getElementById("unionFormula").textContent=
+`Half-FOV = ${fmt(fov)} ÷ 2 = ${fmt(half)}
+
+Raw total:
+${fmt(fov)} + ${fmt(fov)} + ${fmt(fov)} = ${fmt(raw)}
+
+Union:
+${unionText}
+
+Total unique angle = ${fmt(total)}`;
+
+    document.getElementById("positionExplanation").innerHTML=
+      `The top diagram is a <b>physical-space picture</b>: each camera's ${fmt(fov)} cone begins at the camera itself. Moving a camera changes where that cone lies in the studio, so the actual <b>spatial overlap</b> between cameras can change.<br><br>
+      But #14 does not provide enough camera-location information to determine that physical overlap. The problem gives only <b>camera directions</b> and <b>FOV angles</b>.<br><br>
+      The lower diagram therefore keeps only those angular quantities. Changing only the position sliders does not change the intervals <b>${fmt(ints[0][0],true)} to ${fmt(ints[0][1],true)}</b>, <b>${fmt(ints[1][0],true)} to ${fmt(ints[1][1],true)}</b>, and <b>${fmt(ints[2][0],true)} to ${fmt(ints[2][1],true)}</b>, so #14's angular answer remains <b>${fmt(total)}</b>.`;
+
+    document.getElementById("liveMeaning").innerHTML =
+      `<b>Watch the two views together:</b> the position sliders change the top physical picture, but the lower angle model stays the same as long as the aiming angles and FOV stay fixed. That tells you the textbook is asking for <b>angular coverage</b>, not exact physical overlap in the studio.`;
+
+    const original=angles[0]===-45&&angles[1]===0&&angles[2]===45&&fov===60;
+    document.getElementById("callout").innerHTML=original
+      ? `<b>Original setup:</b> in the geometry model, left = [−75°, −15°], center = [−30°, +30°], and right = [+15°, +75°]. The angular overlaps are 15° and 15°, so 180° − 30° = <b>150°</b>.`
+      : `<b>Interactive setup:</b> the calculations update automatically as the camera angles or FOV change.`;
+  }
+
+  [...cams.flatMap(c=>[c.angleInput,c.distInput]),fovEl,showRealFillEl,showGeoOverlapFillEl,showGeoOverlapLabelsEl]
+    .forEach(el=>el.addEventListener("input",update));
+
+  document.getElementById("reset").addEventListener("click",()=>{
+    cams[0].angleInput.value=-45;cams[1].angleInput.value=0;cams[2].angleInput.value=45;fovEl.value=60;
+    cams[0].distInput.value=220;cams[1].distInput.value=180;cams[2].distInput.value=220;
+    showRealFillEl.checked=true;showGeoOverlapFillEl.checked=true;showGeoOverlapLabelsEl.checked=true;
+    update();
+  });
+
+  document.getElementById("moveOnly").addEventListener("click",()=>{
+    cams[0].angleInput.value=-45;cams[1].angleInput.value=0;cams[2].angleInput.value=45;fovEl.value=60;
+    cams[0].distInput.value=140;cams[1].distInput.value=300;cams[2].distInput.value=160;
+    update();
+  });
+
+  document.getElementById("overlapBtn").addEventListener("click",()=>{
+    cams[0].angleInput.value=-25;cams[1].angleInput.value=0;cams[2].angleInput.value=25;fovEl.value=60;
+    update();
+  });
+
+  document.getElementById("gapBtn").addEventListener("click",()=>{
+    cams[0].angleInput.value=-75;cams[1].angleInput.value=0;cams[2].angleInput.value=75;fovEl.value=60;
+    update();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
